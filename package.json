@@ -5,6 +5,7 @@
   "main": "dist/waifu2x.js",
   "types": "dist/waifu2x.d.ts",
   "scripts": {
+    "prepare": "tsc",
     "start": "tsc && node dist/start.js",
     "prepublishOnly": "tsc"
   },
