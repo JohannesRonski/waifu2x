@@ -234,7 +234,7 @@ export default class Waifu2x {
             if (process.platform === "darwin") program = `cd "${absolute}" && cd mac && ./realesrgan-ncnn-vulkan`
             if (process.platform === "linux") program = `cd "${absolute}" && cd linux && ./realesrgan-ncnn-vulkan`
             const ext = path.extname(source).replace(".", "")
-            command = `${program} -i "${sourcePath}" -o "${destPath}" -f ${ext} -n ${options.scale === 4 ? "realesrgan-x4plus-anime" : "realesr-animevideov3"}`
+            command = `${program} -i "${sourcePath}" -o "${destPath}" -f ${ext} -n ${options.scale === 4 ? "realesrgan-x4plus" : "realesr-animevideov3"}`
             if (options.scale) command +=  ` -s ${options.scale}`
             if (options.threads) command += ` -j ${options.threads}:${options.threads}:${options.threads}`
         } else {
