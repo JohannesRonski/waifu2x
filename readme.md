@@ -1,6 +1,6 @@
 <div align="left">
   <p>
-    <a href="https://tenpi.github.io/waifu2x/"><img src="https://raw.githubusercontent.com/Tenpi/waifu2x/master/assets/waifu2xlogo.png" width="500" /></a>
+    <a href="https://moebits.github.io/waifu2x/"><img src="https://raw.githubusercontent.com/Moebits/waifu2x/master/assets/waifu2xlogo.png" width="500" /></a>
   </p>
   <p>
     <a href="https://nodei.co/npm/waifu2x/"><img src="https://nodei.co/npm/waifu2x.png" /></a>
@@ -8,11 +8,17 @@
 </div>
 
 ### About
-This package uses the pre-built Windows x64 and macOS arm64 binaries from [**waifu2x-converter-cpp**](https://github.com/DeadSix27/waifu2x-converter-cpp) in order to upscale anime-styled images with node.js. For upscaling videos, you will also need
-to have [**ffmpeg**](https://ffmpeg.org/) installed. For a gui version, you can also see my [Waifu2x GUI app](https://github.com/Tenpi/Waifu2x-GUI).
+This package uses pre-built Waifu2x binaries in order to upscale anime-styled images with node.js. For upscaling videos, you will also need
+to have [**ffmpeg**](https://ffmpeg.org/) installed. For a gui version, you can also see my [Waifu2x GUI app](https://github.com/Moebits/Waifu2x-GUI).
 
-**New** - Added the [**Real-ESRGAN**](https://github.com/xinntao/Real-ESRGAN) upscaler which is faster and gives better results than waifu2x. To use it,
-set upscaler to "real-esrgan" in the options. When using Real-ESRGAN, you can only provide scale factors from 2-4 and all other waifu2x specific settings are ignored. At 4x upscale it uses the Anime4x model which is a bit slower, but provides better results, so it is recommended to upscale at 4x when using Real-ESRGAN.
+Real-ESRGAN - To use Real-ESRGAN instead, set the upscaler to "real-esrgan" in the options. When using Real-ESRGAN, you can only provide scale factors from 2-4 and all other waifu2x specific settings are ignored. At 4x upscale it uses the Anime4x model which is a bit slower, but provides better results, so it is recommended to upscale at 4x when using Real-ESRGAN.
+
+Real-CUGAN - To use Real-CUGAN instead, set the upscaler to "real-cugan" in the options. You can only provide scale factors 1/2/4 and all other waifu2x specific settings are ignored.
+
+Anime4k - To use Anime4k, set the upscaler to "anime4k" in the options. Only the scale option is used. This is a fast upscaler suited for 
+videos/gifs.
+
+PyTorch Models - To use a custom pytorch model, set the upscaler to an absolute path to the model. All other settings are ignored.
 
 ### Insall
 ```ts
@@ -21,7 +27,6 @@ npm install waifu2x
 
 ### Useful Links
 - [**waifu2x**](https://github.com/nagadomi/waifu2x)
-- [**waifu2x-converter-cpp**](https://github.com/DeadSix27/waifu2x-converter-cpp)
 
 #### Upscaling and/or de-noising images
 ```ts
@@ -35,7 +40,7 @@ await waifu2x.upscaleImage("./images/laffey.png", "./images/upscaled/laffey2x.pn
 end of all the new filenames (default is 2x).*/
 await waifu2x.upscaleImages("./images", "./upscaled", {recursive: true, rename: "2x"}, progress)
 
-/*You can also use absolute paths, or set a custom path to waifu2x if you are bundling it yourself. It must be the path to the folder that waifu2x-converter-cpp.exe is in.*/
+/*You can also use absolute paths, or set a custom path to waifu2x if you are bundling it yourself. It must be the path to the folder that waifu2x-ncnn-vulkan.exe is in.*/
 await waifu2x.upscaleImage("F:/Documents/image.png", "F:/Documents/image2x.png", {waifu2xPath: "F:/Documents/waifu2x"})
 
 /*This callback function can track progress. Return true in order to stop early.*/
@@ -106,7 +111,18 @@ let totalProgress = (current: number, total: number) => {
 }
 ```
 
-#### Resuming GIFs/Videos
+#### Upscaling PDFs
+```ts
+/*Upscaling PDFs works the same as it does for gifs/videos. You can downscale height prior to upscaling.*/
+await waifu2x.upscalePDF("./images/pdfs/hello.pdf", "./images/pdfs/hello2x.pdf", {scale: 2, downscaleHeight: 1000}, progress)
+
+/*You can track progress the same as with GIFs/videos.*/
+let progress = (current: number, total: number) => {
+  console.log(`Current Frame: ${current} Total Frames: ${total}`)
+}
+```
+
+#### Resuming GIFs/Videos/PDFs
 
 If the program is terminated in the middle of upscaling a GIF or video, assuming that you provide the same options and that you didn't delete the frames folder, it will resume where it left off. This is useful for upscaling large GIFs/videos in multiple sittings.
 
@@ -137,25 +153,25 @@ export type Waifu2xFormats =
 #### Waifu2xOptions
 ```ts
 export interface Waifu2xOptions {
-    noise?: 0 | 1 | 2 | 3
+    upscaler?: "waifu2x" | "real-esrgan" | "real-cugan" | string
+    noise?: -1 | 0 | 1 | 2 | 3
     scale?: number
     mode?: "noise" | "scale" | "noise-scale"
-    blockSize?: number
     pngCompression?: number
     jpgWebpQuality?: number
-    disableGPU?: boolean
-    forceOpenCL?: boolean
-    processor?: number
     threads?: number
-    modelDir?: string
     recursive?: boolean
     rename?: string
-    waifu2xPath?: string
     limit?: number
     parallelFrames?: number
+    waifu2xPath?: string
+    waifu2xModel?: "models-cunet" | "models-upconv_7_anime_style_art_rgb"
     webpPath?: string
-    upscaler?: string
     esrganPath?: string
+    cuganPath?: string
+    scriptsPath?: string
+    rifePath?: string
+    rifeModel?: string
 }
 ```
 
@@ -165,8 +181,9 @@ export interface Waifu2xGIFOptions extends Waifu2xOptions {
     quality?: number
     speed?: number
     reverse?: boolean
-    cumulative?: boolean
-    transparency?: boolean
+    transparentColor?: string
+    noResume?: boolean
+    pngFrames?: boolean
 }
 ```
 
@@ -176,7 +193,7 @@ export interface Waifu2xAnimatedWebpOptions extends Waifu2xOptions {
     quality?: number
     speed?: number
     reverse?: boolean
-    webpPath?: string
+    noResume?: boolean
 }
 ```
 
@@ -188,7 +205,21 @@ export interface Waifu2xVideoOptions extends Waifu2xOptions {
     speed?: number
     reverse?: boolean
     pitch?: boolean
+    sdColorSpace?: boolean
+    noResume?: boolean
+    pngFrames?: boolean
+    fpsMultiplier?: number
     ffmpegPath?: string
+}
+```
+
+#### Waifu2xPDFOptions
+```ts
+export interface Waifu2xPDFOptions extends Waifu2xOptions {
+    quality?: number
+    reverse?: boolean
+    noResume?: boolean
+    pngFrames?: boolean
 }
 ```
 <details>
@@ -198,10 +229,10 @@ export interface Waifu2xVideoOptions extends Waifu2xOptions {
 
 `laffey.jpg`
 
-<img src="https://raw.githubusercontent.com/Tenpi/waifu2x/master/assets/laffey.jpg" />
+<img src="https://raw.githubusercontent.com/Moebits/waifu2x/master/assets/laffey.jpg" />
 
 `laffey2x.png`
 
-<img src="https://raw.githubusercontent.com/Tenpi/waifu2x/master/assets/laffey2x.jpg" />
+<img src="https://raw.githubusercontent.com/Moebits/waifu2x/master/assets/laffey2x.jpg" />
 
 </details>
